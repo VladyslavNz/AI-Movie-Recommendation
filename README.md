@@ -14,7 +14,8 @@ This project implements a movie recommendation system based on artificial neural
 - Required Python libraries (install via `pip`):
 
 ## DATASET
-- This dataset (MovieLens 20M) was used in the project, utilizing data from movies.csv and ratings.csv.
+- **Source:** [MovieLens 20M Dataset](https://www.kaggle.com/datasets/grouplens/movielens-20m-dataset?resource=download)
+- **Used files:** `movies.csv`, `ratings.csv`
 ```bash
 pip install numpy pandas tensorflow matplotlib scikit-learn requests
 
