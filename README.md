@@ -13,5 +13,8 @@ This project implements a movie recommendation system based on artificial neural
 - Python version **3.11** (recommended).
 - Required Python libraries (install via `pip`):
 
+## DATASET
+- This dataset (MovieLens 20M) was used in the project, utilizing data from movies.csv and ratings.csv.
 ```bash
 pip install numpy pandas tensorflow matplotlib scikit-learn requests
+
