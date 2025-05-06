@@ -17,5 +17,10 @@ This project implements a movie recommendation system based on artificial neural
 - **Source:** [MovieLens 20M Dataset](https://www.kaggle.com/datasets/grouplens/movielens-20m-dataset?resource=download)
 - **Used files:** `movies.csv`, `ratings.csv`
 ```bash
-pip install numpy pandas tensorflow matplotlib scikit-learn requests
+pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit
+```
+**Start Project**
+```bash
+streamlit run app.py 
+```
 
