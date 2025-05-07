@@ -50,7 +50,7 @@ if st.button("🔁 Retrain model"):
         # Plot training history
         history_img_path = os.path.join(os.path.dirname(__file__), 'images', 'training_history.png')
         plot_history(history, history_img_path)
-        st.image(history_img_path, caption="📈 Training History", use_column_width=True)
+        st.image(history_img_path, caption="📈 Training History", use_container_width=True)
         st.success("✅ Model retrained and saved!")
 
 # Generate recommendations
