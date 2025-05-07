@@ -1,7 +1,16 @@
-from components.data.data import load_datasets, extract_genres
-from components.preprocess.preprocess import preprocess_data
-from components.model.model import build_model
-from components.train.train import train_model, plot_history
+from components.context.context import (
+    model,
+    ratings_df,
+    movies_df,
+    train_df,
+    val_df,
+    movie_id_to_idx,
+    user_id_to_idx,
+    num_users,
+    num_movies,
+    num_genres,
+    all_genres,
+)
 from components.metrics.metrics import calculate_metrics
 from components.recommend.recommend import get_movie_recommendations, explain_recommendations
 import os
