@@ -4,39 +4,109 @@ from components.data.data import load_datasets
 from components.preprocess.preprocess import preprocess_data
 from components.model.model import build_model
 from components.train.train import train_model, plot_history
-from components.metrics.metrics import calculate_metrics
 
+# Global context variables - initialized to None
+model = None
+ratings_df = None
+movies_df = None
+train_df = None
+val_df = None
+movie_id_to_idx = None
+user_id_to_idx = None
+num_users = None
+num_movies = None
+num_genres = None
+all_genres = None
 
-# Paths
-model_save_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'models', 'movie_recommender_model.keras')
-os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
+# Configuration
+EMBEDDING_DIM = 50
+HIDDEN_LAYERS = [256, 128, 64]
 
-# Data loading and preparation
-ratings_df, movies_df = load_datasets()
-train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres = preprocess_data(ratings_df, movies_df)
+def get_model_path():
+    """Return the path where the model should be saved"""
+    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
+                             'models', 'movie_recommender_model.keras')
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    return model_path
 
-embedding_dim = 50
-hidden_layers = [256, 128, 64]
+def get_history_image_path():
+    """Return the path where the training history image should be saved"""
+    history_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
+                               'images', 'training_history.png')
+    os.makedirs(os.path.dirname(history_path), exist_ok=True)
+    return history_path
 
-# Model loading or building
-if os.path.exists(model_save_path):
-    print(f"Loading model from {model_save_path}...")
-    model = keras.models.load_model(model_save_path)
-else:
-    print("Training new model...")
-    model = build_model(num_users, num_movies, embedding_dim, hidden_layers)
-    model.summary()
-    # Training
-    history = train_model(model, train_df, val_df)
-    history_img_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'images', 'training_history.png')
-    os.makedirs(os.path.dirname(history_img_path), exist_ok=True)
-    plot_history(history, history_img_path)
-    # Model saving
-    model.save(model_save_path)
-    print(f"\nModel saved successfully to {model_save_path}!")
+def initialize_data():
+    """Load and preprocess data, return initialized variables"""
+    global ratings_df, movies_df, train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres
+    
+    # Load data if not already loaded
+    if ratings_df is None or movies_df is None:
+        ratings_df, movies_df = load_datasets()
+    
+    # Preprocess data
+    train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres = preprocess_data(ratings_df, movies_df)
+    
+    return {
+        'ratings_df': ratings_df, 
+        'movies_df': movies_df,
+        'train_df': train_df, 
+        'val_df': val_df,
+        'movie_id_to_idx': movie_id_to_idx,
+        'user_id_to_idx': user_id_to_idx,
+        'num_users': num_users,
+        'num_movies': num_movies,
+        'num_genres': num_genres,
+        'all_genres': all_genres
+    }
 
-# Export all context variables
-__all__ = [
-    "model", "ratings_df", "movies_df", "train_df", "val_df",
-    "movie_id_to_idx", "user_id_to_idx", "num_users", "num_movies", "num_genres", "all_genres"
-]
+def initialize_model(force_retrain=False):
+    """Initialize or load the model, train if necessary"""
+    global model
+    
+    # Make sure data is initialized
+    data = initialize_data()
+    
+    model_path = get_model_path()
+    
+    # Load existing model if available and not forced to retrain
+    if os.path.exists(model_path) and not force_retrain:
+        print(f"Loading model from {model_path}...")
+        model = keras.models.load_model(model_path)
+    else:
+        print("Training new model...")
+        model = build_model(data['num_users'], data['num_movies'], EMBEDDING_DIM, HIDDEN_LAYERS)
+        model.summary()
+        
+        # Train the model
+        history = train_model(model, data['train_df'], data['val_df'])
+        
+        # Plot and save training history
+        history_img_path = get_history_image_path()
+        plot_history(history, history_img_path)
+        
+        # Save the model
+        model.save(model_path)
+        print(f"\nModel saved successfully to {model_path}!")
+    
+    return model
+
+def initialize_all(force_retrain=False):
+    """Initialize all context variables"""
+    initialize_data()
+    initialize_model(force_retrain)
+    
+    # Return all context variables as a dictionary
+    return {
+        'model': model,
+        'ratings_df': ratings_df,
+        'movies_df': movies_df,
+        'train_df': train_df,
+        'val_df': val_df,
+        'movie_id_to_idx': movie_id_to_idx,
+        'user_id_to_idx': user_id_to_idx,
+        'num_users': num_users,
+        'num_movies': num_movies,
+        'num_genres': num_genres,
+        'all_genres': all_genres
+    }
