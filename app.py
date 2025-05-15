@@ -1,26 +1,24 @@
 import streamlit as st
-import os
-from components.context.context import (
-    model,
-    ratings_df,
-    movies_df,
-    train_df,
-    val_df,
-    movie_id_to_idx,
-    user_id_to_idx,
-    num_users,
-    num_movies,
-    num_genres,
-    all_genres,
-)
-from components.preprocess.preprocess import preprocess_data
-from components.model.model import build_model
-from components.train.train import train_model, plot_history
+from components.context.context import initialize_all, initialize_model
 from components.recommend.recommend import get_movie_recommendations, explain_recommendations
+import os
 
 # Page settings
 st.set_page_config(page_title="🎬 AI Movie Recommender", layout="wide")
 st.title("🎬 AI Movie Recommender System")
+
+# Initialize context (with lazy loading)
+@st.cache_resource
+def get_context():
+    return initialize_all()
+
+# Get context variables
+context = get_context()
+model = context['model']
+ratings_df = context['ratings_df']
+movies_df = context['movies_df']
+movie_id_to_idx = context['movie_id_to_idx']
+user_id_to_idx = context['user_id_to_idx']
 
 # Get all unique user IDs
 unique_user_ids = sorted(ratings_df['userId'].unique())
@@ -31,25 +29,14 @@ user_id = st.selectbox("Select a user ID:", unique_user_ids)
 # Number of recommendations
 top_n = st.slider("How many movies to recommend?", min_value=1, max_value=20, value=10)
 
+# Retrain model button
 if st.button("🔁 Retrain model"):
     with st.spinner("Training the model, please wait..."):
-        # Re-preprocessing data
-        train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres = preprocess_data(ratings_df, movies_df)
-
-        # Build and train new model
-        embedding_dim = 50
-        hidden_layers = [256, 128, 64]
-        new_model = build_model(num_users, num_movies, embedding_dim, hidden_layers)
-        history = train_model(new_model, train_df, val_df)
-
-        # Save model
-        model_save_path = os.path.join(os.path.dirname(__file__), 'models', 'movie_recommender_model.keras')
-        os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
-        new_model.save(model_save_path)
-
-        # Plot training history
+        # Force model retraining
+        model = initialize_model(force_retrain=True)
+        
+        # Display training history
         history_img_path = os.path.join(os.path.dirname(__file__), 'images', 'training_history.png')
-        plot_history(history, history_img_path)
         st.image(history_img_path, caption="📈 Training History", use_container_width=True)
         st.success("✅ Model retrained and saved!")
 
