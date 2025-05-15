@@ -4,6 +4,7 @@ from components.data.data import load_datasets
 from components.preprocess.preprocess import preprocess_data
 from components.model.model import build_model
 from components.train.train import train_model, plot_history
+from config import get_model_path, get_history_image_path
 
 # Global context variables - initialized to None
 model = None
@@ -21,20 +22,6 @@ all_genres = None
 # Configuration
 EMBEDDING_DIM = 50
 HIDDEN_LAYERS = [256, 128, 64]
-
-def get_model_path():
-    """Return the path where the model should be saved"""
-    model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
-                             'models', 'movie_recommender_model.keras')
-    os.makedirs(os.path.dirname(model_path), exist_ok=True)
-    return model_path
-
-def get_history_image_path():
-    """Return the path where the training history image should be saved"""
-    history_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
-                               'images', 'training_history.png')
-    os.makedirs(os.path.dirname(history_path), exist_ok=True)
-    return history_path
 
 def initialize_data():
     """Load and preprocess data, return initialized variables"""

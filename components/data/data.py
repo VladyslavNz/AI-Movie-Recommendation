@@ -4,24 +4,23 @@ import numpy as np
 import requests
 import zipfile
 import io
-
-# Get the project root (assumes this script is always in components/data/)
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-
-dataset_path = os.path.join(project_root, 'Datasets')
-ratings_path = os.path.join(dataset_path, 'ratings.csv')
-movies_path = os.path.join(dataset_path, 'movies.csv')
+from config import get_dataset_path, DATASETS_DIR
 
 def download_movielens_dataset():
     print("Downloading MovieLens dataset...")
-    os.makedirs(dataset_path, exist_ok=True)
+    os.makedirs(DATASETS_DIR, exist_ok=True)
     url = "https://files.grouplens.org/datasets/movielens/ml-latest-small.zip"
+    
+    # Use the config paths
+    ratings_path = get_dataset_path('ratings.csv')
+    movies_path = get_dataset_path('movies.csv')
+    
     try:
         response = requests.get(url)
         response.raise_for_status()
         with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
-            zip_ref.extractall(dataset_path)
-        extracted_dir = os.path.join(dataset_path, "ml-latest-small")
+            zip_ref.extractall(DATASETS_DIR)
+        extracted_dir = os.path.join(DATASETS_DIR, "ml-latest-small")
         if os.path.exists(os.path.join(extracted_dir, "ratings.csv")):
             os.rename(os.path.join(extracted_dir, "ratings.csv"), ratings_path)
         if os.path.exists(os.path.join(extracted_dir, "movies.csv")):
@@ -33,6 +32,10 @@ def download_movielens_dataset():
         return False
 
 def load_datasets():
+    # Use the config paths
+    ratings_path = get_dataset_path('ratings.csv')
+    movies_path = get_dataset_path('movies.csv')
+    
     if not (os.path.exists(ratings_path) and os.path.exists(movies_path)):
         print("Dataset files not found. Attempting to download...")
         if not download_movielens_dataset():
