@@ -10,6 +10,7 @@ from config import get_model_path, get_history_image_path
 model = None
 ratings_df = None
 movies_df = None
+tags_df = None  # New addition
 train_df = None
 val_df = None
 movie_id_to_idx = None
@@ -25,11 +26,11 @@ HIDDEN_LAYERS = [256, 128, 64]
 
 def initialize_data():
     """Load and preprocess data, return initialized variables"""
-    global ratings_df, movies_df, train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres
+    global ratings_df, movies_df, tags_df, train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres
     
     # Load data if not already loaded
     if ratings_df is None or movies_df is None:
-        ratings_df, movies_df = load_datasets()
+        ratings_df, movies_df, tags_df = load_datasets()
     
     # Preprocess data
     train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres = preprocess_data(ratings_df, movies_df)
@@ -37,6 +38,7 @@ def initialize_data():
     return {
         'ratings_df': ratings_df, 
         'movies_df': movies_df,
+        'tags_df': tags_df,  # New addition
         'train_df': train_df, 
         'val_df': val_df,
         'movie_id_to_idx': movie_id_to_idx,
@@ -88,6 +90,7 @@ def initialize_all(force_retrain=False):
         'model': model,
         'ratings_df': ratings_df,
         'movies_df': movies_df,
+        'tags_df': tags_df,  # New addition
         'train_df': train_df,
         'val_df': val_df,
         'movie_id_to_idx': movie_id_to_idx,

@@ -9,6 +9,7 @@ context = initialize_all()
 model = context['model']
 ratings_df = context['ratings_df']
 movies_df = context['movies_df']
+tags_df = context['tags_df']  # New addition
 val_df = context['val_df']
 movie_id_to_idx = context['movie_id_to_idx']
 user_id_to_idx = context['user_id_to_idx']
@@ -31,5 +32,5 @@ print(recommendations)
 
 if recommendations is not None and not recommendations.empty:
     first_movie_id = recommendations.iloc[0]['movieId']
-    explanation = explain_recommendations(user_id_example, first_movie_id, ratings_df, movies_df)
+    explanation = explain_recommendations(user_id_example, first_movie_id, ratings_df, movies_df, tags_df)
     print(explanation)
