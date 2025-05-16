@@ -183,7 +183,7 @@ def find_similar_users(user_id, movie_id, ratings_df, min_common=5):
     # Sort by similarity
     similar_users = sorted(similar_users, key=lambda x: x['similarity'], reverse=True)
     
-    return similar_users[:5]  # Return top 5 similar users
+    return similar_users[:5] 
 
 def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=None):
     """Enhanced explanation for movie recommendations."""
@@ -199,7 +199,6 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
     explanations = []
     confidence_signals = 0  # Track how many positive signals we have
     
-    # 1. Genre-based explanation (improved)
     genre_prefs = get_genre_preferences(user_id, ratings_df, movies_df)
     
     if genre_prefs and genre_prefs['sorted_preferences']:
@@ -212,7 +211,6 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
             explanations.append(f"You tend to enjoy {', '.join(genre_ratings)} movies")
             confidence_signals += len(common_top_genres)
     
-    # 2. Tag-based explanation
     if tags_df is not None:
         # Get movie tags
         movie_tags = tags_df[tags_df['movieId'] == movie_id]['tag'].str.lower().tolist()
@@ -238,7 +236,6 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
                     explanations.append(f"This movie has tags you often look for: {', '.join(unique_tags)}")
                     confidence_signals += len(unique_tags)
     
-    # 3. Similar users explanation
     similar_users = find_similar_users(user_id, movie_id, ratings_df)
     
     if similar_users:
@@ -256,7 +253,6 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
             explanations.append(f"{count} users with similar taste rated this movie {avg_rating:.1f}⭐ on average")
             confidence_signals += 1 if avg_rating > 3.5 else 0
     
-    # 4. Year/era preference analysis
     if movie_year:
         user_ratings = ratings_df[ratings_df['userId'] == user_id]
         
@@ -277,10 +273,7 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
                 explanations.append(f"You've enjoyed movies from the {decade}s ({decade_avg:.1f}⭐ average)")
                 confidence_signals += 1
     
-    # 5. Find director/actor preferences if possible
-    # This would require additional data not currently available in the dataset
-    
-    # 6. Generic fallback explanation if no other explanations
+    # Generic fallback explanation if no other explanations
     if not explanations:
         # Check if the user has rated movies of these genres before
         user_ratings = ratings_df[ratings_df['userId'] == user_id]
@@ -307,6 +300,89 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
     # Combine all explanations with confidence prefix
     return confidence_prefix + " • ".join(explanations)
 
+def get_interactive_explanation(user_id, movie_id, ratings_df, movies_df, tags_df=None, mode="detailed"):
+    base_explanation_str = explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df)
+
+    if base_explanation_str == "No explanation available.":
+        return base_explanation_str
+
+    detailed_additions = []
+    movie_row = movies_df[movies_df['movieId'] == movie_id]
+    if movie_row.empty: # Should not happen if base_explanation_str is not "No explanation available."
+        return base_explanation_str
+
+    movie_title = movie_row.iloc[0]['title']
+    movie_genres_list = movie_row.iloc[0]['genres'].split('|')
+
+    # 1. Detailed Genre Info
+    genre_prefs = get_genre_preferences(user_id, ratings_df, movies_df)
+    if genre_prefs and genre_prefs.get('sorted_preferences'):
+        pref_details_list = []
+        for g, r_avg in genre_prefs['sorted_preferences'][:5]: # Top 5 preferred genres
+            pref_details_list.append(f"{g} (avg. rating: {r_avg:.1f}⭐)")
+        
+        genre_str = ""
+        if pref_details_list:
+            genre_str += f"Your top genre preferences include: {'; '.join(pref_details_list)}. "
+        
+        movie_genre_str = f"'{movie_title}' genres: {', '.join(movie_genres_list)}. "
+        
+        common_genres_in_movie = [g for g in movie_genres_list if g in genre_prefs.get('avg_ratings', {})]
+        if common_genres_in_movie:
+            ratings_for_common = [f"{g} (your avg: {genre_prefs['avg_ratings'].get(g, 0):.1f}⭐)" for g in common_genres_in_movie]
+            movie_genre_str += f"For genres in this movie, your average ratings are: {', '.join(ratings_for_common)}."
+        
+        if genre_str or movie_genre_str:
+             detailed_additions.append(f"Genre Deep Dive: {genre_str}{movie_genre_str}")
+
+    # 2. Detailed Tag Info
+    if tags_df is not None:
+        movie_tags_list_all = tags_df[tags_df['movieId'] == movie_id]['tag'].str.lower().tolist()
+        unique_movie_tags = list(set(movie_tags_list_all))
+        
+        if unique_movie_tags:
+            user_tag_prefs = get_tag_preferences(user_id, ratings_df, movies_df, tags_df)
+            tag_str_parts = [f"'{movie_title}' has {len(unique_movie_tags)} unique tags, including: {', '.join(unique_movie_tags[:7])}."]
+            
+            if user_tag_prefs:
+                user_pref_tags_display = []
+                source_of_prefs = ""
+                if user_tag_prefs.get('tfidf_tags'):
+                    user_pref_tags_display = [f"{tag} (score: {score:.2f})" for tag, score in user_tag_prefs['tfidf_tags'][:7]]
+                    source_of_prefs = "Your TF-IDF weighted preferred tags"
+                elif user_tag_prefs.get('frequency_tags'):
+                    user_pref_tags_display = [f"{tag} (count: {count})" for tag, count in user_tag_prefs['frequency_tags'][:7]]
+                    source_of_prefs = "Your most frequent tags"
+                
+                if user_pref_tags_display:
+                    tag_str_parts.append(f"{source_of_prefs}: {', '.join(user_pref_tags_display)}.")
+
+                user_important_tags_set = set()
+                if user_tag_prefs.get('tfidf_tags'):
+                     user_important_tags_set = {tag for tag, _ in user_tag_prefs['tfidf_tags'][:10]}
+                elif user_tag_prefs.get('frequency_tags'):
+                     user_important_tags_set = {tag for tag, _ in user_tag_prefs['frequency_tags'][:10]}
+                
+                if user_important_tags_set:
+                    common_movie_tags = [tag for tag in unique_movie_tags if tag.lower() in user_important_tags_set]
+                    if common_movie_tags:
+                         tag_str_parts.append(f"Common preferred tags found in this movie: {', '.join(common_movie_tags[:5])}.")
+            detailed_additions.append(f"Tag Deep Dive: {' '.join(tag_str_parts)}")
+
+    # 3. Detailed Similar Users Info
+    similar_users_list = find_similar_users(user_id, movie_id, ratings_df)
+    if similar_users_list:
+        sim_user_details_list = []
+        for sim_user_info in similar_users_list[:3]: # Top 3 similar users
+            sim_user_details_list.append(f"User {sim_user_info['userId']} (similarity: {sim_user_info['similarity']:.2f}) rated it {sim_user_info['movie_rating']}⭐")
+        if sim_user_details_list:
+             detailed_additions.append(f"Similar User Insights: {'; '.join(sim_user_details_list)}.")
+    
+    if detailed_additions:
+        return base_explanation_str + "\n\n🔎 **Detailed Breakdown:**\n" + "\n\n".join(detailed_additions)
+    else:
+        return base_explanation_str # No further details to add
+
 def extract_year_from_title(title):
     """Extract year from movie title if available (format: "Title (YYYY)")"""
     import re
@@ -316,17 +392,6 @@ def extract_year_from_title(title):
     return None
 
 def create_user_preference_chart(user_id, ratings_df, movies_df):
-    """
-    Creates a visualization of user genre preferences with ratings.
-    
-    Args:
-        user_id: The user ID to analyze
-        ratings_df: DataFrame with ratings data
-        movies_df: DataFrame with movies data
-        
-    Returns:
-        A plotly figure object showing genre preferences
-    """
     # Get user genre preferences
     user_genre_prefs = get_genre_preferences(user_id, ratings_df, movies_df)
     
@@ -376,18 +441,6 @@ def create_user_preference_chart(user_id, ratings_df, movies_df):
     return fig
 
 def classify_recommendation(user_id, movie_id, ratings_df, movies_df):
-    """
-    Classifies a recommendation as either similar to user favorites or something new.
-    
-    Args:
-        user_id: The user ID 
-        movie_id: The movie ID to classify
-        ratings_df: DataFrame with ratings data
-        movies_df: DataFrame with movies data
-        
-    Returns:
-        A classification string and emoji indicator
-    """
     # Get user preferences
     user_genre_prefs = get_genre_preferences(user_id, ratings_df, movies_df)
     

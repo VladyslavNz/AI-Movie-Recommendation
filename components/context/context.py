@@ -6,11 +6,10 @@ from components.model.model import build_model
 from components.train.train import train_model, plot_history
 from config import get_model_path, get_history_image_path
 
-# Global context variables - initialized to None
 model = None
 ratings_df = None
 movies_df = None
-tags_df = None  # New addition
+tags_df = None 
 train_df = None
 val_df = None
 movie_id_to_idx = None
@@ -38,7 +37,7 @@ def initialize_data():
     return {
         'ratings_df': ratings_df, 
         'movies_df': movies_df,
-        'tags_df': tags_df,  # New addition
+        'tags_df': tags_df,
         'train_df': train_df, 
         'val_df': val_df,
         'movie_id_to_idx': movie_id_to_idx,
@@ -90,7 +89,7 @@ def initialize_all(force_retrain=False):
         'model': model,
         'ratings_df': ratings_df,
         'movies_df': movies_df,
-        'tags_df': tags_df,  # New addition
+        'tags_df': tags_df, 
         'train_df': train_df,
         'val_df': val_df,
         'movie_id_to_idx': movie_id_to_idx,

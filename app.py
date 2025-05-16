@@ -1,15 +1,14 @@
 import streamlit as st
 import plotly.express as px
 from components.context.context import initialize_all, initialize_model
-from components.recommend.recommend import (get_movie_recommendations, explain_recommendations,
-                                           create_user_preference_chart, classify_recommendation)
+from components.recommend.recommend import (get_movie_recommendations, explain_recommendations,create_user_preference_chart, classify_recommendation,get_interactive_explanation)
 import os
 
-# Page settings
+
 st.set_page_config(page_title="🎬 AI Movie Recommender", layout="wide")
 st.title("🎬 AI Movie Recommender System")
 
-# Initialize context (with lazy loading)
+# Initialize context (lazy loading)
 @st.cache_resource
 def get_context():
     return initialize_all()
@@ -19,7 +18,7 @@ context = get_context()
 model = context['model']
 ratings_df = context['ratings_df']
 movies_df = context['movies_df']
-tags_df = context['tags_df']  # New addition
+tags_df = context['tags_df']
 movie_id_to_idx = context['movie_id_to_idx']
 user_id_to_idx = context['user_id_to_idx']
 
@@ -38,6 +37,7 @@ with st.expander("📊 View User Preferences", expanded=False):
 
 # Number of recommendations
 top_n = st.slider("How many movies to recommend?", min_value=1, max_value=20, value=10)
+selected_mode = "detailed"
 
 # Retrain model button
 if st.button("🔁 Retrain model"):
@@ -64,26 +64,45 @@ if st.button("🔍 Get Recommendations"):
         )
 
     if recommendations is not None and not recommendations.empty:
-        st.success(f"Recommended {len(recommendations)} movies for user {user_id}:")
+        st.success(f"Recommended {len(recommendations)} movies for user {user_id}:")        
         for idx, row in recommendations.iterrows():
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                st.subheader(f"{row['title']} ({row['predicted_rating']:.2f} ⭐)")
-                st.text(f"Genres: {row['genres']}")
-                
-                # Add the classification tag
+            with st.container():
+                # divider
+                if idx > 0:
+                    st.markdown("---")
+                st.markdown(f"### {row['title']} ({row['predicted_rating']:.2f} ⭐)")
+                st.markdown(f"**Genres**: {row['genres']}")
                 classification = classify_recommendation(user_id, row['movieId'], ratings_df, movies_df)
-                st.info(classification)
+                if "New to you" in classification:
+                    st.markdown(f"🆕 **{classification}**")
+                else:
+                    st.markdown(f"🔄 **{classification}**")
                 
-                explanation = explain_recommendations(user_id, row['movieId'], ratings_df, movies_df, tags_df)
-                st.caption(f"📌 {explanation}")
-            
-            # Add a button to see similar movies in the future
-            with col2:
-                if st.button(f"Similar to #{row['movieId']}", key=f"similar_{row['movieId']}"):
-                    st.session_state.selected_movie_id = row['movieId']
-            
-            st.markdown("---")
+                # Get explanation
+                explanation = get_interactive_explanation(user_id, row['movieId'], ratings_df, movies_df, tags_df, mode=selected_mode)
+                
+                if explanation.startswith("🌟 Strong match:"):
+                    confidence_text = "🌟 **Strong match**"
+                    explanation_content = explanation[len("🌟 Strong match:"):]
+                    confidence_color = "green"
+                elif explanation.startswith("✅ Good match:"):
+                    confidence_text = "✅ **Good match**"
+                    explanation_content = explanation[len("✅ Good match:"):]
+                    confidence_color = "orange"
+                else:
+                    confidence_text = "💡 **Match reason**"
+                    explanation_content = explanation
+                    confidence_color = "gray"
+                
+                st.markdown(f":{confidence_color}[{confidence_text}]")
+                
+                if "\n\n" in explanation_content:
+                    basic_part, detailed_part = explanation_content.split("\n\n", 1)
+                    st.markdown(basic_part)
+                    
+                    with st.expander("👁️ See detailed explanation"):
+                        st.markdown(detailed_part)
+                else:
+                    st.markdown(explanation_content)
     else:
         st.warning("No recommendations found for this user.")

@@ -35,7 +35,6 @@ def download_movielens_dataset():
         return False
 
 def load_datasets():
-    # Use the config paths
     ratings_path = get_dataset_path('ratings.csv')
     movies_path = get_dataset_path('movies.csv')
     tags_path = get_dataset_path('tags.csv')
