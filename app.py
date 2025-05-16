@@ -8,6 +8,9 @@ import os
 st.set_page_config(page_title="🎬 AI Movie Recommender", layout="wide")
 st.title("🎬 AI Movie Recommender System")
 
+if 'retraining_complete' not in st.session_state:
+    st.session_state.retraining_complete = False
+    st.session_state.retrained_model = None
 # Initialize context (lazy loading)
 @st.cache_resource
 def get_context():
@@ -21,6 +24,22 @@ movies_df = context['movies_df']
 tags_df = context['tags_df']
 movie_id_to_idx = context['movie_id_to_idx']
 user_id_to_idx = context['user_id_to_idx']
+
+if st.session_state.retrained_model is not None:
+    model = st.session_state.retrained_model
+
+# Dialog for model retraining
+@st.dialog("Confirm Model Retraining")
+def confirm_retraining():
+    st.warning("⚠️ **This will retrain the model**")
+    st.write("Model retraining may take several minutes and will overwrite the current model. Are you sure you want to proceed?")
+
+    if st.button("Yes, retrain model"):
+        with st.spinner("Training the model, please wait..."):
+            # Force model retraining
+            st.session_state.retrained_model = initialize_model(force_retrain=True)
+            st.session_state.retraining_complete = True
+            st.rerun()
 
 # Get all unique user IDs
 unique_user_ids = sorted(ratings_df['userId'].unique())
@@ -39,16 +58,14 @@ with st.expander("📊 View User Preferences", expanded=False):
 top_n = st.slider("How many movies to recommend?", min_value=1, max_value=20, value=10)
 selected_mode = "detailed"
 
-# Retrain model button
 if st.button("🔁 Retrain model"):
-    with st.spinner("Training the model, please wait..."):
-        # Force model retraining
-        model = initialize_model(force_retrain=True)
-        
-        # Display training history
-        history_img_path = os.path.join(os.path.dirname(__file__), 'images', 'training_history.png')
-        st.image(history_img_path, caption="📈 Training History", use_container_width=True)
-        st.success("✅ Model retrained and saved!")
+    confirm_retraining()
+
+if st.session_state.retraining_complete:
+    st.success("✅ Model retrained and saved!")
+    history_img_path = os.path.join(os.path.dirname(__file__), 'images', 'training_history.png')
+    st.image(history_img_path, caption="📈 Training History", use_container_width=True)
+    st.session_state.retraining_complete = False
 
 # Generate recommendations
 if st.button("🔍 Get Recommendations"):
@@ -64,10 +81,9 @@ if st.button("🔍 Get Recommendations"):
         )
 
     if recommendations is not None and not recommendations.empty:
-        st.success(f"Recommended {len(recommendations)} movies for user {user_id}:")        
+        st.success(f"Recommended {len(recommendations)} movies for user {user_id}:")
         for idx, row in recommendations.iterrows():
             with st.container():
-                # divider
                 if idx > 0:
                     st.markdown("---")
                 st.markdown(f"### {row['title']} ({row['predicted_rating']:.2f} ⭐)")
@@ -99,7 +115,6 @@ if st.button("🔍 Get Recommendations"):
                 if "\n\n" in explanation_content:
                     basic_part, detailed_part = explanation_content.split("\n\n", 1)
                     st.markdown(basic_part)
-                    
                     with st.expander("👁️ See detailed explanation"):
                         st.markdown(detailed_part)
                 else:
