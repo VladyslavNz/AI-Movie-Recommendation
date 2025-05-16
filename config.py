@@ -9,7 +9,6 @@ DATASETS_DIR = os.path.join(ROOT_DIR, "Datasets")
 MODELS_DIR = os.path.join(ROOT_DIR, "models")
 IMAGES_DIR = os.path.join(ROOT_DIR, "images")
 
-# Model and image file names
 MODEL_FILENAME = "movie_recommender_model.keras"
 HISTORY_IMAGE_FILENAME = "training_history.png"
 

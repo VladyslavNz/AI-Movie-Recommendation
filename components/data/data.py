@@ -14,6 +14,7 @@ def download_movielens_dataset():
     # Use the config paths
     ratings_path = get_dataset_path('ratings.csv')
     movies_path = get_dataset_path('movies.csv')
+    tags_path = get_dataset_path('tags.csv')
     
     try:
         response = requests.get(url)
@@ -25,6 +26,8 @@ def download_movielens_dataset():
             os.rename(os.path.join(extracted_dir, "ratings.csv"), ratings_path)
         if os.path.exists(os.path.join(extracted_dir, "movies.csv")):
             os.rename(os.path.join(extracted_dir, "movies.csv"), movies_path)
+        if os.path.exists(os.path.join(extracted_dir, "tags.csv")):
+            os.rename(os.path.join(extracted_dir, "tags.csv"), tags_path)
         print("Dataset downloaded and extracted successfully!")
         return True
     except Exception as e:
@@ -32,18 +35,25 @@ def download_movielens_dataset():
         return False
 
 def load_datasets():
-    # Use the config paths
     ratings_path = get_dataset_path('ratings.csv')
     movies_path = get_dataset_path('movies.csv')
+    tags_path = get_dataset_path('tags.csv')
     
     if not (os.path.exists(ratings_path) and os.path.exists(movies_path)):
         print("Dataset files not found. Attempting to download...")
         if not download_movielens_dataset():
             print("Error: Failed to download dataset files.")
             exit(1)
+    
     ratings_df = pd.read_csv(ratings_path)
     movies_df = pd.read_csv(movies_path)
-    return ratings_df, movies_df
+    
+    # Add tags dataframe if available
+    tags_df = None
+    if os.path.exists(tags_path):
+        tags_df = pd.read_csv(tags_path)
+    
+    return ratings_df, movies_df, tags_df
 
 def extract_genres(genres_str):
     return genres_str.split('|')
