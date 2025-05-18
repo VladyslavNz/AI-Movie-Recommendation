@@ -33,3 +33,9 @@ pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit p
 ```bash
 streamlit run app.py
 ```
+
+**Start tests**
+
+```
+python -m pytest tests/  
+```
