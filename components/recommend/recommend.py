@@ -20,14 +20,14 @@ def get_movie_recommendations(user_id, top_n, model, movies_df, ratings_df, movi
     return recommendations[['movieId', 'title', 'genres', 'predicted_rating']]
 
 def get_genre_preferences(user_id, ratings_df, movies_df):
-    """Analyze user genre preferences with average ratings per genre."""
+    #Analyze user genre preferences with average ratings per genr
     user_ratings = ratings_df[ratings_df['userId'] == user_id]
     
     # Dictionary to store total ratings and count for each genre
     genre_ratings = {}
     genre_counts = {}
     
-    # Collect ratings by genre
+    #Collect ratings by genre
     for _, row in user_ratings.iterrows():
         movie_id = row['movieId']
         rating = row['rating']
@@ -46,7 +46,7 @@ def get_genre_preferences(user_id, ratings_df, movies_df):
         if genre_counts[genre] > 0:
             genre_avg_ratings[genre] = genre_ratings[genre] / genre_counts[genre]
     
-    # Sort genres by average rating (descending)
+    # Sort genres by average rating
     sorted_genres = sorted(genre_avg_ratings.items(), key=lambda x: x[1], reverse=True)
     
     return {
@@ -56,24 +56,20 @@ def get_genre_preferences(user_id, ratings_df, movies_df):
     }
 
 def get_tag_preferences(user_id, ratings_df, movies_df, tags_df):
-    """Analyze user tag preferences using TF-IDF."""
+    #Analyze user tag preferences using TF-IDF.
     if tags_df is None:
         return None
     
-    # Get movies rated by the user
     user_movies = ratings_df[ratings_df['userId'] == user_id]['movieId'].unique()
     
-    # Get tags for those movies
     movie_tags = tags_df[tags_df['movieId'].isin(user_movies)]
     
-    # If no tags available, return None
     if len(movie_tags) == 0:
         return None
     
-    # Prepare tag counts
     tag_counts = Counter(movie_tags['tag'].str.lower())
     
-    # Create tag document for TF-IDF (all tags for user's movies as one document)
+    # tag document for TF-IDF 
     user_tags_document = ' '.join(movie_tags['tag'].str.lower())
     
     # Perform TF-IDF analysis if we have enough data
@@ -92,10 +88,9 @@ def get_tag_preferences(user_id, ratings_df, movies_df, tags_df):
             vectorizer = TfidfVectorizer(stop_words='english')
             tfidf_matrix = vectorizer.fit_transform(corpus)
             
-            # Get feature names
             feature_names = vectorizer.get_feature_names_out()
             
-            # Get user document vector (first document in corpus)
+            # Get user document vector
             user_vector = tfidf_matrix[0]
             
             # Get top tags by TF-IDF score
@@ -105,7 +100,7 @@ def get_tag_preferences(user_id, ratings_df, movies_df, tags_df):
             # Return both frequency counts and TF-IDF results
             return {
                 'tag_counts': tag_counts,
-                'tfidf_tags': sorted_scores[:20]  # Top 20 tags by TF-IDF score
+                'tfidf_tags': sorted_scores[:20]
             }
         except Exception as e:
             # Fallback to simple frequency analysis if TF-IDF fails
@@ -117,7 +112,7 @@ def get_tag_preferences(user_id, ratings_df, movies_df, tags_df):
                 'frequency_tags': sorted_tags[:20]
             }
     
-    # If no TF-IDF analysis was possible, return frequency analysis
+    # If no TF-IDF analysis, return frequency analysis
     sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)
     return {
         'tag_counts': tag_counts,
@@ -137,7 +132,7 @@ def find_similar_users(user_id, movie_id, ratings_df, min_common=5):
     # For each user who rated the movie
     for rater_id in movie_raters['userId'].unique():
         if rater_id == user_id:
-            continue  # Skip the user themselves
+            continue
             
         rater_ratings = ratings_df[ratings_df['userId'] == rater_id]
         
@@ -159,7 +154,7 @@ def find_similar_users(user_id, movie_id, ratings_df, min_common=5):
             rater_std = np.std(rater_common_ratings['rating'].values)
             
             if user_std > 0 and rater_std > 0:
-                # Calculate similarity (correlation between ratings)
+                # Calculate similarity
                 try:
                     similarity = np.corrcoef(
                         user_common_ratings['rating'].values,
@@ -176,11 +171,9 @@ def find_similar_users(user_id, movie_id, ratings_df, min_common=5):
                             'common_movies': len(common_movies)
                         })
                 except Exception as e:
-                    # Skip this user if correlation calculation fails
                     print(f"Error calculating similarity: {e}")
                     continue
     
-    # Sort by similarity
     similar_users = sorted(similar_users, key=lambda x: x['similarity'], reverse=True)
     
     return similar_users[:5] 
@@ -197,7 +190,7 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
     
     # List to store different explanation components
     explanations = []
-    confidence_signals = 0  # Track how many positive signals we have
+    confidence_signals = 0 
     
     genre_prefs = get_genre_preferences(user_id, ratings_df, movies_df)
     
@@ -259,7 +252,6 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
         # Create an explicit copy of the filtered DataFrame
         user_movies = movies_df[movies_df['movieId'].isin(user_ratings['movieId'])].copy()
         
-        # Now we can safely add a column
         user_movies['year'] = user_movies['title'].apply(extract_year_from_title)
         
         # Count movies from same decade
@@ -290,7 +282,7 @@ def explain_recommendations(user_id, movie_id, ratings_df, movies_df, tags_df=No
         else:
             explanations.append(f"This might expand your viewing preferences")
     
-    # 7. Add confidence level based on accumulated signals
+    #Add confidence level based on accumulated signals
     confidence_prefix = ""
     if confidence_signals >= 5:
         confidence_prefix = "🌟 Strong match: "
@@ -308,17 +300,17 @@ def get_interactive_explanation(user_id, movie_id, ratings_df, movies_df, tags_d
 
     detailed_additions = []
     movie_row = movies_df[movies_df['movieId'] == movie_id]
-    if movie_row.empty: # Should not happen if base_explanation_str is not "No explanation available."
+    if movie_row.empty:
         return base_explanation_str
 
     movie_title = movie_row.iloc[0]['title']
     movie_genres_list = movie_row.iloc[0]['genres'].split('|')
 
-    # 1. Detailed Genre Info
+    #Detailed Genre Info
     genre_prefs = get_genre_preferences(user_id, ratings_df, movies_df)
     if genre_prefs and genre_prefs.get('sorted_preferences'):
         pref_details_list = []
-        for g, r_avg in genre_prefs['sorted_preferences'][:5]: # Top 5 preferred genres
+        for g, r_avg in genre_prefs['sorted_preferences'][:5]:
             pref_details_list.append(f"{g} (avg. rating: {r_avg:.1f}⭐)")
         
         genre_str = ""
@@ -335,7 +327,7 @@ def get_interactive_explanation(user_id, movie_id, ratings_df, movies_df, tags_d
         if genre_str or movie_genre_str:
              detailed_additions.append(f"Genre Deep Dive: {genre_str}{movie_genre_str}")
 
-    # 2. Detailed Tag Info
+    #Detailed Tag Info
     if tags_df is not None:
         movie_tags_list_all = tags_df[tags_df['movieId'] == movie_id]['tag'].str.lower().tolist()
         unique_movie_tags = list(set(movie_tags_list_all))
@@ -369,11 +361,11 @@ def get_interactive_explanation(user_id, movie_id, ratings_df, movies_df, tags_d
                          tag_str_parts.append(f"Common preferred tags found in this movie: {', '.join(common_movie_tags[:5])}.")
             detailed_additions.append(f"Tag Deep Dive: {' '.join(tag_str_parts)}")
 
-    # 3. Detailed Similar Users Info
+    #Detailed Similar Users Info
     similar_users_list = find_similar_users(user_id, movie_id, ratings_df)
     if similar_users_list:
         sim_user_details_list = []
-        for sim_user_info in similar_users_list[:3]: # Top 3 similar users
+        for sim_user_info in similar_users_list[:3]:
             sim_user_details_list.append(f"User {sim_user_info['userId']} (similarity: {sim_user_info['similarity']:.2f}) rated it {sim_user_info['movie_rating']}⭐")
         if sim_user_details_list:
              detailed_additions.append(f"Similar User Insights: {'; '.join(sim_user_details_list)}.")
@@ -381,10 +373,10 @@ def get_interactive_explanation(user_id, movie_id, ratings_df, movies_df, tags_d
     if detailed_additions:
         return base_explanation_str + "\n\n🔎 **Detailed Breakdown:**\n" + "\n\n".join(detailed_additions)
     else:
-        return base_explanation_str # No further details to add
+        return base_explanation_str
 
 def extract_year_from_title(title):
-    """Extract year from movie title if available (format: "Title (YYYY)")"""
+    #Extract year from movie title if available (format: "Title (YYYY)")
     import re
     match = re.search(r'\((\d{4})\)$', title)
     if match:
@@ -421,7 +413,7 @@ def create_user_preference_chart(user_id, ratings_df, movies_df):
         y='Average Rating',
         title=f"Genre Preferences for User {user_id}",
         color='Average Rating',
-        color_continuous_scale='RdYlGn',  # Red to Yellow to Green scale
+        color_continuous_scale='RdYlGn',
         hover_data=['Movies Watched'],
         text='Movies Watched'
     )

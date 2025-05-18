@@ -24,7 +24,7 @@ EMBEDDING_DIM = 50
 HIDDEN_LAYERS = [256, 128, 64]
 
 def initialize_data():
-    """Load and preprocess data, return initialized variables"""
+    #Load and preprocess data, return initialized variables
     global ratings_df, movies_df, tags_df, train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres
     
     # Load data if not already loaded
@@ -49,7 +49,7 @@ def initialize_data():
     }
 
 def initialize_model(force_retrain=False):
-    """Initialize or load the model, train if necessary"""
+    #Initialize or load the model, train if necessary
     global model
     
     # Make sure data is initialized
@@ -80,7 +80,7 @@ def initialize_model(force_retrain=False):
     return model
 
 def initialize_all(force_retrain=False):
-    """Initialize all context variables"""
+    #Initialize all context variables
     initialize_data()
     initialize_model(force_retrain)
     

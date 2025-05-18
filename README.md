@@ -20,7 +20,7 @@ This project implements a movie recommendation system based on artificial neural
 - Required Python libraries (install via `pip`):
 
 ```bash
-pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit plotly
+pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit plotly pytest
 ```
 
 ## DATASET
@@ -32,4 +32,10 @@ pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit p
 
 ```bash
 streamlit run app.py
+```
+
+**Start tests**
+
+```
+python -m pytest tests/  
 ```
