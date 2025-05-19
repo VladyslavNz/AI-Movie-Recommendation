@@ -4,8 +4,8 @@ This project implements a movie recommendation system based on artificial neural
 
 ## Features
 
-- Personalized movie recommendations based on user preferences and movie content.
-- Deep neural network model that uses user and movie embeddings along with bias terms.
+- Personalized movie recommendations based on user preferences and movie content
+- Deep neural network model that uses user and movie embeddings along with bias terms
 - Enhanced recommendation explanations that consider:
   - User genre preferences with average ratings
   - Tag analysis using TF-IDF
@@ -13,11 +13,17 @@ This project implements a movie recommendation system based on artificial neural
   - Viewing history patterns
 - Visual analytics of user preferences
 - Classification of recommendations as familiar or novel content
+- Interactive confidence ratings for recommendations (🌟 Strong match, ✅ Good match)
+- Expandable detailed explanations for each recommendation
+- User preference visualization through interactive charts
+- Advanced filtering options for recommendations
+- Model retraining capabilities with performance visualization
 
 ## Requirements
 
-- Python version **3.11** (recommended).
-- Required Python libraries (install via `pip`):
+- **Python 3.11** is required.
+- It is **highly recommended** to use a virtual environment to ensure isolated and consistent dependencies.
+- Install required Python libraries via `pip`:
 
 ```bash
 pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit plotly pytest
