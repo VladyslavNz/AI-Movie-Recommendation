@@ -10,23 +10,19 @@ def test_extract_genres():
     genres = extract_genres(genres_str)
     assert genres == ["Action", "Adventure", "Sci-Fi"]
     
-    # Test with single genre
     single_genre = "Comedy"
     genres = extract_genres(single_genre)
     assert genres == ["Comedy"]
 
 def test_load_datasets_with_existing_files(monkeypatch, tmp_path):
     # Test loading datasets when files exist
-    # Create temp datasets
     temp_dir = tmp_path / "Datasets"
     temp_dir.mkdir()
     
-    # sampe CSV
     ratings_csv = temp_dir / "ratings.csv"
     movies_csv = temp_dir / "movies.csv"
     tags_csv = temp_dir / "tags.csv"
     
-    # Write minimal data to these files
     pd.DataFrame({'userId': [1], 'movieId': [1], 'rating': [4.0], 'timestamp': [1000000]}).to_csv(ratings_csv, index=False)
     pd.DataFrame({'movieId': [1], 'title': ['Test Movie'], 'genres': ['Action']}).to_csv(movies_csv, index=False)
     pd.DataFrame({'userId': [1], 'movieId': [1], 'tag': ['great'], 'timestamp': [1000000]}).to_csv(tags_csv, index=False)
@@ -37,7 +33,6 @@ def test_load_datasets_with_existing_files(monkeypatch, tmp_path):
     
     monkeypatch.setattr('components.data.data.get_dataset_path', mock_get_dataset_path)
     
-    # Test loading
     ratings_df, movies_df, tags_df = load_datasets()
     
     assert not ratings_df.empty
@@ -53,25 +48,19 @@ def test_preprocess_data(sample_ratings_df, sample_movies_df):
     
     result = preprocess_data(sample_ratings_df, sample_movies_df)
     
-    # Unpack results
     train_df, val_df, movie_id_to_idx, user_id_to_idx, num_users, num_movies, num_genres, all_genres = result
     
-    # Check if train_df and val_df
     assert len(train_df) + len(val_df) == len(sample_ratings_df)
     
-    # Check if mappings are correct
     assert len(movie_id_to_idx) == len(sample_movies_df['movieId'].unique())
     assert len(user_id_to_idx) == len(sample_ratings_df['userId'].unique())
     
-    # Check if counts are correct
     assert num_users == len(sample_ratings_df['userId'].unique())
     assert num_movies == len(sample_movies_df['movieId'].unique())
     
-    # Check if genre extraction is correct
     expected_genres = {'Action', 'Adventure', 'Comedy', 'Drama', 'Romance', 'Sci-Fi', 'Thriller'}
     assert set(all_genres) == expected_genres
     assert num_genres == len(expected_genres)
     
-    # Check if genre columns were created
     for genre in all_genres:
         assert genre in sample_movies_df.columns
