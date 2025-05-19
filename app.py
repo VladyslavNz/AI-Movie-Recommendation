@@ -4,6 +4,7 @@ from components.context.context import initialize_all, initialize_model
 from components.recommend.recommend import (get_movie_recommendations, explain_recommendations, 
                                            create_user_preference_chart, classify_recommendation, 
                                            get_interactive_explanation, extract_year_from_title)
+from components.metrics.metrics import calculate_metrics
 import os
 import pandas as pd
 
@@ -27,6 +28,7 @@ movies_df = context['movies_df']
 tags_df = context['tags_df']
 movie_id_to_idx = context['movie_id_to_idx']
 user_id_to_idx = context['user_id_to_idx']
+val_df = context['val_df']
 
 if st.session_state.retrained_model is not None:
     model = st.session_state.retrained_model
@@ -46,6 +48,64 @@ def confirm_retraining():
 
 # Get all unique user IDs
 unique_user_ids = sorted(ratings_df['userId'].unique())
+
+# Model metrics button and display
+col1, col2 = st.columns([1, 1])
+with col1:
+    if st.button("🔍 Show Metrics"):
+        with st.spinner("Calculating model metrics..."):
+            metrics = calculate_metrics(
+                model, 
+                val_df['user_idx'].values, 
+                val_df['movie_idx'].values, 
+                val_df['rating'].values
+            )
+            
+            st.subheader("📊 Model Evaluation Metrics")
+            
+            # Group metrics by type
+            regression_metrics = {k: v for k, v in metrics.items() if k in ['MSE', 'RMSE', 'MAE']}
+            ranking_metrics = {k: v for k, v in metrics.items() if k not in ['MSE', 'RMSE', 'MAE']}
+            
+            # Display regression metrics
+            st.markdown("### Error Metrics")
+            reg_metrics_df = pd.DataFrame({
+                'Metric': list(regression_metrics.keys()),
+                'Value': list(regression_metrics.values())
+            })
+            st.table(reg_metrics_df.set_index('Metric'))
+            
+            # Display ranking metrics
+            st.markdown("### Ranking Metrics")
+            ranking_metrics_df = pd.DataFrame({
+                'Metric': list(ranking_metrics.keys()),
+                'Value': list(ranking_metrics.values())
+            })
+            st.table(ranking_metrics_df.set_index('Metric'))
+            
+            # Show explanation of metrics
+            with st.expander("ℹ️ What do these metrics mean?"):
+                st.markdown("""
+                ### Error Metrics
+                - **MSE (Mean Squared Error)**: Average of squared differences between predictions and actual ratings. Lower is better.
+                - **RMSE (Root Mean Squared Error)**: Square root of MSE, giving error in the same units as the ratings. Lower is better.
+                - **MAE (Mean Absolute Error)**: Average of absolute differences between predictions and actual ratings. Lower is better.
+                
+                ### Ranking Metrics
+                - **Precision@K**: Proportion of recommended items in the top-K that are relevant (rated ≥4.0). Higher is better.
+                - **Recall@K**: Proportion of relevant items that are in the top-K recommendations. Higher is better.
+                - **nDCG@K**: Normalized Discounted Cumulative Gain at K. Measures ranking quality considering both relevance and position. Higher is better.
+                """)
+
+with col2:
+    if st.button("🔁 Retrain model"):
+        confirm_retraining()
+
+if st.session_state.retraining_complete:
+    st.success("✅ Model retrained and saved!")
+    history_img_path = os.path.join(os.path.dirname(__file__), 'images', 'training_history.png')
+    st.image(history_img_path, caption="📈 Training History", use_container_width=True)
+    st.session_state.retraining_complete = False
 
 # User ID selection
 user_id = st.selectbox("Select a user ID:", unique_user_ids)
@@ -99,23 +159,13 @@ with st.expander("Filter Recommendations", expanded=False):
             value=(min_year, max_year)
         )
 
-if st.button("🔁 Retrain model"):
-    confirm_retraining()
-
-if st.session_state.retraining_complete:
-    st.success("✅ Model retrained and saved!")
-    history_img_path = os.path.join(os.path.dirname(__file__), 'images', 'training_history.png')
-    st.image(history_img_path, caption="📈 Training History", use_container_width=True)
-    st.session_state.retraining_complete = False
-
-# Generate recommendations
 if st.button("🔍 Get Recommendations"):
     with st.spinner("Generating recommendations..."):
         # Get more recommendations than needed to allow for filtering
         buffer_factor = 3  # Get 3x as many recommendations to have room for filtering
         initial_recommendations = get_movie_recommendations(
             user_id,
-            top_n=top_n * buffer_factor,  # Get more recommendations initially
+            top_n=top_n * buffer_factor,
             model=model,
             movies_df=movies_df,
             ratings_df=ratings_df,
