@@ -41,13 +41,13 @@ def calculate_metrics(model, user_idxs, movie_idxs, true_ratings):
                 
             top_k_indices = sorted_indices[:k]
             
-            # Calculate Precision@K (proportion of recommended items that are relevant)
+            # Calculate Precision@K
             precision_k = np.mean(user_relevance[top_k_indices])
             avg_precision[k] += precision_k
             
-            # Calculate Recall@K (proportion of relevant items that are recommended)
+            # Calculate Recall@K
             total_relevant = np.sum(user_relevance)
-            if total_relevant > 0:  # Avoid division by zero
+            if total_relevant > 0:
                 recall_k = np.sum(user_relevance[top_k_indices]) / total_relevant
                 avg_recall[k] += recall_k
             
@@ -61,7 +61,7 @@ def calculate_metrics(model, user_idxs, movie_idxs, true_ratings):
             except Exception:
                 relevance_sorted = user_relevance[sorted_indices]
                 dcg = np.sum(relevance_sorted[:k] / np.log2(np.arange(2, k + 2)))
-                ideal_sorted = np.sort(user_relevance)[::-1]  # Sort in descending order
+                ideal_sorted = np.sort(user_relevance)[::-1]
                 idcg = np.sum(ideal_sorted[:k] / np.log2(np.arange(2, k + 2)))
                 ndcg = dcg / idcg if idcg > 0 else 0
                 avg_ndcg[k] += ndcg
@@ -72,7 +72,6 @@ def calculate_metrics(model, user_idxs, movie_idxs, true_ratings):
             precision_recall_metrics[f'Recall@{k}'] = avg_recall[k] / user_count
             precision_recall_metrics[f'nDCG@{k}'] = avg_ndcg[k] / user_count
     
-    # Combine all metrics and return
     metrics = {
         'MSE': mse, 
         'RMSE': rmse, 

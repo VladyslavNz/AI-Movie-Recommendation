@@ -7,6 +7,7 @@ from components.recommend.recommend import (get_movie_recommendations, explain_r
 from components.metrics.metrics import calculate_metrics
 import os
 import pandas as pd
+from config import get_history_image_path
 
 st.set_page_config(page_title="🎬 AI Movie Recommender", layout="wide")
 st.title("🎬 AI Movie Recommender System")
@@ -49,19 +50,17 @@ def confirm_retraining():
 # Get all unique user IDs
 unique_user_ids = sorted(ratings_df['userId'].unique())
 
-# Model metrics button and display
+# Model metrics section
 col1, col2 = st.columns([1, 1])
 with col1:
-    if st.button("🔍 Show Metrics"):
-        with st.spinner("Calculating model metrics..."):
+    with st.expander("🔍 Model Metrics", expanded=False):
+        with st.spinner("Calculating metrics..."):
             metrics = calculate_metrics(
                 model, 
                 val_df['user_idx'].values, 
                 val_df['movie_idx'].values, 
                 val_df['rating'].values
             )
-            
-            st.subheader("📊 Model Evaluation Metrics")
             
             # Group metrics by type
             regression_metrics = {k: v for k, v in metrics.items() if k in ['MSE', 'RMSE', 'MAE']}
@@ -75,7 +74,7 @@ with col1:
             })
             st.table(reg_metrics_df.set_index('Metric'))
             
-            # Display ranking metrics
+           # Display ranking metrics
             st.markdown("### Ranking Metrics")
             ranking_metrics_df = pd.DataFrame({
                 'Metric': list(ranking_metrics.keys()),
@@ -83,8 +82,8 @@ with col1:
             })
             st.table(ranking_metrics_df.set_index('Metric'))
             
-            # Show explanation of metrics
-            with st.expander("ℹ️ What do these metrics mean?"):
+            # Add a toggle for metrics explanation instead of nested expander
+            if st.checkbox("ℹ️ Show metrics explanation", value=False):
                 st.markdown("""
                 ### Error Metrics
                 - **MSE (Mean Squared Error)**: Average of squared differences between predictions and actual ratings. Lower is better.
@@ -103,25 +102,24 @@ with col2:
 
 if st.session_state.retraining_complete:
     st.success("✅ Model retrained and saved!")
-    history_img_path = os.path.join(os.path.dirname(__file__), 'images', 'training_history.png')
-    st.image(history_img_path, caption="📈 Training History", use_container_width=True)
+    st.image(get_history_image_path(), caption="📈 Training History", use_container_width=True)
     st.session_state.retraining_complete = False
 
-# User ID selection
+with st.expander("📈 View Neural Network Training History", expanded=False):
+    st.image(get_history_image_path(), caption="Neural Network Training Metrics", use_container_width=True)
+
 user_id = st.selectbox("Select a user ID:", unique_user_ids)
 
-# Add a section for user preferences visualization
 with st.expander("📊 View User Preferences", expanded=False):
     st.write("This chart shows your genre preferences based on your rating history:")
     preference_chart = create_user_preference_chart(user_id, ratings_df, movies_df)
     st.plotly_chart(preference_chart, use_container_width=True)
     st.info("📌 Higher bars indicate genres you tend to rate highly. The number on each bar shows how many movies of that genre you've watched.")
 
-# Number of recommendations
 top_n = st.slider("How many movies to recommend?", min_value=1, max_value=20, value=10)
 selected_mode = "detailed"
 
-# Add filters section
+# filters section
 with st.expander("Filter Recommendations", expanded=False):
     col1, col2 = st.columns(2)
     all_genres = set()
@@ -131,7 +129,6 @@ with st.expander("Filter Recommendations", expanded=False):
         
     all_genres = sorted(list(all_genres))
     
-    # Get years range from dataset
     years = []
     for title in movies_df['title']:
         import re
@@ -143,7 +140,6 @@ with st.expander("Filter Recommendations", expanded=False):
     max_year = max(years) if years else 2023
     
     with col1:
-        # Genre filter (multi-select)
         selected_genres = st.multiselect(
             "Filter by genres (leave empty for all):",
             options=all_genres,
@@ -151,7 +147,6 @@ with st.expander("Filter Recommendations", expanded=False):
         )
     
     with col2:
-        # Year range filter
         year_range = st.slider(
             "Filter by year range:",
             min_value=min_year,
@@ -161,7 +156,6 @@ with st.expander("Filter Recommendations", expanded=False):
 
 if st.button("🔍 Get Recommendations"):
     with st.spinner("Generating recommendations..."):
-        # Get more recommendations than needed to allow for filtering
         buffer_factor = 3  # Get 3x as many recommendations to have room for filtering
         initial_recommendations = get_movie_recommendations(
             user_id,
@@ -174,11 +168,8 @@ if st.button("🔍 Get Recommendations"):
         )
         
         if initial_recommendations is not None and not initial_recommendations.empty:
-            # Apply filters if specified
             filtered_recommendations = initial_recommendations.copy()
-            # Filter by selected genres
             if selected_genres:
-                # Create mask for movies that contain ANY of the selected genres
                 genre_mask = filtered_recommendations['genres'].apply(
                     lambda x: any(genre in x.split('|') for genre in selected_genres)
                 )
@@ -186,7 +177,6 @@ if st.button("🔍 Get Recommendations"):
             
             # Filter by year range
             if year_range != (min_year, max_year):
-                # Extract years and filter
                 year_mask = filtered_recommendations['title'].apply(
                     lambda x: extract_year_from_title(x) is not None and 
                               year_range[0] <= extract_year_from_title(x) <= year_range[1]

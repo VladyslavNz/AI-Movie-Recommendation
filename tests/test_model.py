@@ -25,11 +25,9 @@ def test_model_prediction():
     #Test that the model can make predictions
     model = tf.keras.models.load_model(get_model_path())
     
-    # Create sample input
     user_idx = np.array([0, 1, 2])
     movie_idx = np.array([0, 1, 2])
     
-    # Make prediction
     predictions = model.predict([user_idx, movie_idx], verbose=0)
     
     # Check if predictions have expected shape and values
