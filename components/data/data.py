@@ -11,7 +11,6 @@ def download_movielens_dataset():
     os.makedirs(DATASETS_DIR, exist_ok=True)
     url = "https://files.grouplens.org/datasets/movielens/ml-latest-small.zip"
     
-    # Use the config paths
     ratings_path = get_dataset_path('ratings.csv')
     movies_path = get_dataset_path('movies.csv')
     tags_path = get_dataset_path('tags.csv')
@@ -48,7 +47,6 @@ def load_datasets():
     ratings_df = pd.read_csv(ratings_path)
     movies_df = pd.read_csv(movies_path)
     
-    # Add tags dataframe if available
     tags_df = None
     if os.path.exists(tags_path):
         tags_df = pd.read_csv(tags_path)

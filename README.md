@@ -49,3 +49,24 @@ streamlit run app.py
 ```
 python -m pytest tests/  
 ```
+
+## Docker Deployment
+
+You can also run this project using Docker without installing Python or dependencies locally:
+
+**Requirements**
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop)
+
+**Start with Docker**
+
+```bash
+docker-compose up
+```
+
+The application will be available at http://localhost:8501
+
+**Run Tests with Docker**
+```bash
+docker-compose run --rm app python -m pytest tests/
+```

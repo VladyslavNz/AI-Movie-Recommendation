@@ -27,7 +27,6 @@ def test_load_datasets_with_existing_files(monkeypatch, tmp_path):
     pd.DataFrame({'movieId': [1], 'title': ['Test Movie'], 'genres': ['Action']}).to_csv(movies_csv, index=False)
     pd.DataFrame({'userId': [1], 'movieId': [1], 'tag': ['great'], 'timestamp': [1000000]}).to_csv(tags_csv, index=False)
     
-    # Patch get_dataset_path to return temp files
     def mock_get_dataset_path(filename):
         return str(temp_dir / filename)
     
