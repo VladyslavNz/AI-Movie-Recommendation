@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./Datasets:/app/Datasets
+      - ./models:/app/models
+      - ./images:/app/images
+    restart: unless-stopped

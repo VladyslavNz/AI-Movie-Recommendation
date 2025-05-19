@@ -4,23 +4,69 @@ This project implements a movie recommendation system based on artificial neural
 
 ## Features
 
-- Personalized movie recommendations based on user preferences and movie content.
-- Deep neural network model that uses user and movie embeddings along with bias terms.
-- Explanation for each recommendation, showing why certain movies were recommended based on user preferences.
+- Personalized movie recommendations based on user preferences and movie content
+- Deep neural network model that uses user and movie embeddings along with bias terms
+- Enhanced recommendation explanations that consider:
+  - User genre preferences with average ratings
+  - Tag analysis using TF-IDF
+  - Similar users' ratings and preferences
+  - Viewing history patterns
+- Visual analytics of user preferences
+- Classification of recommendations as familiar or novel content
+- Interactive confidence ratings for recommendations (🌟 Strong match, ✅ Good match)
+- Expandable detailed explanations for each recommendation
+- User preference visualization through interactive charts
+- Advanced filtering options for recommendations
+- Model retraining capabilities with performance visualization
 
 ## Requirements
 
-- Python version **3.11** (recommended).
-- Required Python libraries (install via `pip`):
+- **Python 3.11** is required.
+- It is **highly recommended** to use a virtual environment to ensure isolated and consistent dependencies.
+- Install required Python libraries via `pip`:
+
+```bash
+pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit plotly pytest
+```
+or
+```bash
+pip install -r requirements.txt
+```
 
 ## DATASET
+
 - **Source:** [MovieLens 20M Dataset](https://www.kaggle.com/datasets/grouplens/movielens-20m-dataset?resource=download)
-- **Used files:** `movies.csv`, `ratings.csv`
-```bash
-pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit
-```
+- **Used files:** `movies.csv`, `ratings.csv`, `tags.csv`
+
 **Start Project**
+
 ```bash
-streamlit run app.py 
+streamlit run app.py
 ```
 
+**Start tests**
+
+```
+python -m pytest tests/  
+```
+
+## Docker Deployment
+
+You can also run this project using Docker without installing Python or dependencies locally:
+
+**Requirements**
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop)
+
+**Start with Docker**
+
+```bash
+docker-compose up
+```
+
+The application will be available at http://localhost:8501
+
+**Run Tests with Docker**
+```bash
+docker-compose run --rm app python -m pytest tests/
+```
