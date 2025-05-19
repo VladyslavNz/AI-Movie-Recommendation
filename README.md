@@ -28,6 +28,10 @@ This project implements a movie recommendation system based on artificial neural
 ```bash
 pip install numpy pandas tensorflow matplotlib scikit-learn requests streamlit plotly pytest
 ```
+or
+```bash
+pip install -r requirements.txt
+```
 
 ## DATASET
 
